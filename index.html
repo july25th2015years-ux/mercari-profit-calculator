@@ -371,7 +371,7 @@
       justify-content: space-between;
       align-items: center;
       transition: all 0.15s ease-in-out;
-      min-height: 54px;
+      min-height: 58px;
       gap: 8px;
     }
 
@@ -389,22 +389,21 @@
     .shipping-left {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       flex: 1;
       min-width: 0;
     }
 
     .shipping-name-row {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 6px;
-      flex-wrap: nowrap;
     }
 
     .carrier-badge {
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 6px;
+      padding: 1px 5px;
       border-radius: 4px;
       white-space: nowrap;
       flex-shrink: 0;
@@ -429,13 +428,13 @@
       font-size: 13.5px;
       font-weight: 700;
       color: var(--text-main);
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .shipping-desc {
       font-size: 11px;
       color: var(--text-sub);
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .shipping-right {
@@ -1061,7 +1060,7 @@
           <label for="input-packaging">梱包資材費（箱・シール等）</label>
           <div class="adjust-input-wrapper">
             <span style="color:var(--text-sub); margin-right:4px;">¥</span>
-            <input type="number" id="input-packaging" value="0" min="0" max="99999" inputmode="numeric">
+            <input type="number" id="input-packaging" value="0" min="0" max="99999" step="any" inputmode="decimal">
           </div>
         </div>
       </div>
@@ -1214,15 +1213,26 @@
           note: '※専用封筒代 ¥20 込み'
         },
         {
-          id: 'yu_post',
+          id: 'yu_post_seal',
           category: 'small',
           carrier: 'yu',
           carrierName: 'ゆうゆう',
-          name: 'ゆうパケットポスト',
-          desc: '郵便ポスト投函可（厚さ目安3.5cm・2kg以内）',
+          name: 'ゆうパケットポスト（シール）',
+          desc: 'ポスト投函可（厚さ目安3.5cm・2kg以内）',
           price: 215,
-          packagingCost: 5,
-          note: '※発送シール代 約¥5 込み'
+          packagingCost: 7.5,
+          note: '※シール代 ¥7.5 込み'
+        },
+        {
+          id: 'yu_post_box',
+          category: 'small',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: 'ゆうパケットポスト（専用箱）',
+          desc: '32.7×22.8×厚さ3cm・2kg以内（ポスト投函）',
+          price: 215,
+          packagingCost: 65,
+          note: '※専用箱代 ¥65 込み'
         },
         {
           id: 'yu_packet',
@@ -1428,7 +1438,13 @@
       const elBtnClearHistory = document.getElementById('btn-clear-history');
 
       function formatYen(num) {
-        return (num || 0).toLocaleString('ja-JP');
+        if (num === null || num === undefined) return '0';
+        const n = Number(num);
+        if (isNaN(n)) return '0';
+        if (!Number.isInteger(n)) {
+          return n.toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        }
+        return n.toLocaleString('ja-JP');
       }
 
       function calcMercariFee(price) {
@@ -1496,7 +1512,8 @@
         const price = Math.max(0, parseInt(elPrice.value, 10) || 0);
         state.price = price;
         const fee = calcMercariFee(price);
-        const profit = price - fee - state.shippingCost - state.packagingCost;
+        const rawProfit = price - fee - state.shippingCost - state.packagingCost;
+        const profit = Math.floor(rawProfit);
 
         state.targetProfit = profit;
         if (state.activeInput === 'price') {
@@ -1522,7 +1539,7 @@
         const netNeeded = targetProfit + state.shippingCost + state.packagingCost;
         let p = Math.max(300, Math.ceil(netNeeded / 0.9));
 
-        while (p - Math.floor(p * 0.1) - state.shippingCost - state.packagingCost < targetProfit) {
+        while (Math.floor(p - Math.floor(p * 0.1) - state.shippingCost - state.packagingCost) < targetProfit) {
           p++;
         }
 
@@ -1532,7 +1549,7 @@
         }
 
         const fee = calcMercariFee(p);
-        const profit = p - fee - state.shippingCost - state.packagingCost;
+        const profit = Math.floor(p - fee - state.shippingCost - state.packagingCost);
         updateUI(p, fee, profit);
       }
 
@@ -1640,7 +1657,7 @@
       });
 
       elPackaging.addEventListener('input', function () {
-        state.packagingCost = Math.max(0, parseInt(this.value, 10) || 0);
+        state.packagingCost = Math.max(0, parseFloat(this.value) || 0);
         recalculate();
       });
 
@@ -1675,7 +1692,7 @@
 
       elBtnCopy.addEventListener('click', function () {
         const fee = calcMercariFee(state.price);
-        const profit = state.price - fee - state.shippingCost - state.packagingCost;
+        const profit = Math.floor(state.price - fee - state.shippingCost - state.packagingCost);
         const profitRate = state.price > 0 ? ((profit / state.price) * 100).toFixed(1) : 0;
 
         const copyText = [
@@ -1866,7 +1883,7 @@
       function executeSaveHistory() {
         const memo = elInputSaveMemo.value.trim() || '不用品メモ';
         const fee = calcMercariFee(state.price);
-        const profit = state.price - fee - state.shippingCost - state.packagingCost;
+        const profit = Math.floor(state.price - fee - state.shippingCost - state.packagingCost);
 
         const now = new Date();
         const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
