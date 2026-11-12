@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ff0211">
+  <meta name="description" content="メルカリ不用品出品者向けの手残り・利益計算Webアプリ。販売価格と目標手残りの双方向自動計算、サイズ別送料＆専用資材費自動反映、履歴保存機能付き。">
+  <title>メルカリ手残り計算機 | 不用品出品の利益＆価格逆算ツール</title>
+  <style>
+    :root {
+      --primary: #ff0211;
+      --primary-dark: #d9000e;
+      --primary-light: #fff0f1;
+      --primary-border: #ffd1d5;
+      --bg-body: #f6f7f9;
+      --bg-card: #ffffff;
+      --text-main: #212529;
+      --text-sub: #5f6368;
+      --text-light: #80868b;
+      --border-color: #e2e5e9;
+      --profit-green: #0a8754;
+      --profit-bg: #eaf8f1;
+      --profit-border: #bcecd3;
+      --loss-red: #d90429;
+      --loss-bg: #ffebee;
+      --loss-border: #ffcdd2;
+      --warning-orange: #d97706;
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.03);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: calc(var(--safe-bottom) + 32px);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--primary);
+      color: #ffffff;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(255, 2, 17, 0.25);
+    }
+
+    .header-inner {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-icon {
+      width: 32px;
+      height: 32px;
+      background: #ffffff;
+      color: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .app-subtitle {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    .header-reset-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .header-reset-btn:active {
+      background: rgba(255, 255, 255, 0.35);
+      transform: scale(0.96);
+    }
+
+    /* メインコンテナ */
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* カード共通 */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px 14px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .card-title .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid var(--primary-border);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* 双方向計算セクション */
+    .bidirectional-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-box {
+      background: #fafbfc;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      transition: all 0.2s;
+    }
+
+    .input-box.active-source {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(255, 2, 17, 0.1);
+    }
+
+    .input-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .input-subhint {
+      font-size: 11px;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    .active-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--primary);
+      padding: 1px 6px;
+      border-radius: 4px;
+      display: none;
+      white-space: nowrap;
+    }
+
+    .input-box.active-source .active-tag {
+      display: inline-block;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .currency-symbol {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .price-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 28px !important;
+      font-weight: 800;
+      color: var(--text-main);
+      outline: none;
+      font-family: inherit;
+      -webkit-appearance: none;
+    }
+
+    .price-input::placeholder {
+      color: var(--text-light);
+      font-weight: 400;
+    }
+
+    .sync-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-sub);
+      margin: -2px 0;
+    }
+
+    .sync-icon {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-sub);
+    }
+
+    /* 価格ショートカット */
+    .price-shortcuts {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-top: 6px;
+      margin-top: 6px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .price-shortcuts::-webkit-scrollbar {
+      display: none;
+    }
+
+    .shortcut-chip {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .shortcut-chip:active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* 配送サイズ選択セクション */
+    .category-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .category-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-tab {
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      background: #edf0f4;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .cat-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .shipping-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .shipping-grid::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .shipping-grid::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    .shipping-option {
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      background: #ffffff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s ease-in-out;
+      min-height: 54px;
+      gap: 8px;
+    }
+
+    .shipping-option:active {
+      transform: scale(0.99);
+      background: #fdfdfd;
+    }
+
+    .shipping-option.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .shipping-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .shipping-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    .carrier-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .carrier-raku {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .carrier-yu {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .carrier-post {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .shipping-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .shipping-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+      line-height: 1.3;
+    }
+
+    .shipping-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .shipping-price {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .shipping-option.selected .shipping-price {
+      color: var(--primary);
+    }
+
+    .material-note {
+      font-size: 10px;
+      color: #b45309;
+      font-weight: 600;
+      display: block;
+      white-space: nowrap;
+    }
+
+    /* 費用微調整アコーディオン */
+    .cost-adjust-box {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+      display: flex;
+      gap: 10px;
+    }
+
+    .adjust-item {
+      flex: 1;
+    }
+
+    .adjust-item label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .adjust-input-wrapper {
+      display: flex;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+    }
+
+    .adjust-input-wrapper input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+      font-family: inherit;
+    }
+
+    /* 計算結果・手残りハイライトカード */
+    .result-card {
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      padding: 18px 16px;
+      border: 2px solid var(--border-color);
+      box-shadow: var(--shadow-md);
+      transition: all 0.25s ease;
+    }
+
+    .result-card.is-profit {
+      border-color: var(--profit-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--profit-bg) 100%);
+    }
+
+    .result-card.is-loss {
+      border-color: var(--loss-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--loss-bg) 100%);
+    }
+
+    .result-card.is-warning {
+      border-color: var(--warning-border);
+      background: linear-gradient(180deg, #ffffff 0%, var(--warning-bg) 100%);
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .result-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .profit-rate-tag {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .profit-display {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .profit-currency {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .profit-amount {
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+      color: var(--text-main);
+    }
+
+    .is-profit .profit-amount,
+    .is-profit .profit-currency {
+      color: var(--profit-green);
+    }
+
+    .is-loss .profit-amount,
+    .is-loss .profit-currency {
+      color: var(--loss-red);
+    }
+
+    /* アラートボックス */
+    .alert-banner {
+      display: none;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-banner.show {
+      display: flex;
+    }
+
+    .alert-banner.warning {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .alert-banner.danger {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .alert-icon {
+      flex: 0 0 16px;
+      height: 16px;
+    }
+
+    /* 内訳バーグラフ */
+    .breakdown-bar {
+      height: 10px;
+      width: 100%;
+      background: #e2e8f0;
+      border-radius: 6px;
+      display: flex;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .bar-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .bar-profit { background: #10b981; }
+    .bar-fee { background: #3b82f6; }
+    .bar-shipping { background: #f59e0b; }
+    .bar-material { background: #8b5cf6; }
+
+    /* 内訳リスト */
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .breakdown-label {
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-profit { background: #10b981; }
+    .dot-fee { background: #3b82f6; }
+    .dot-shipping { background: #f59e0b; }
+    .dot-material { background: #8b5cf6; }
+
+    .breakdown-val {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* アクションボタン群 */
+    .action-button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      min-height: 46px;
+      border: none;
+    }
+
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+
+    .btn-copy {
+      background: #f1f5f9;
+      color: var(--text-main);
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-copy:active {
+      background: #e2e8f0;
+    }
+
+    .btn-save {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(255, 2, 17, 0.25);
+    }
+
+    .btn-save:active {
+      background: var(--primary-dark);
+    }
+
+    /* 履歴セクション */
+    .history-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px 14px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .btn-clear-all {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-empty {
+      text-align: center;
+      padding: 20px 0;
+      color: var(--text-light);
+      font-size: 13px;
+    }
+
+    .history-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-meta {
+      flex: 1;
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .history-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .history-memo {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-date {
+      font-size: 11px;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+
+    .history-details {
+      font-size: 12px;
+      color: var(--text-sub);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .history-profit {
+      color: var(--profit-green);
+      font-weight: 700;
+    }
+
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-history-load {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+    }
+
+    .btn-history-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+
+    .btn-history-delete:active {
+      color: var(--loss-red);
+      background: #fee2e2;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(17, 24, 39, 0.92);
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* モーダル */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      max-width: 380px;
+      width: 100%;
+      padding: 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 14px;
+      box-sizing: border-box;
+    }
+
+    .modal-input:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .modal-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+
+    .modal-btn-cancel {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .modal-btn-ok {
+      background: var(--primary);
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header>
+    <div class="header-inner">
+      <div class="app-title-group">
+        <div class="app-icon">M</div>
+        <div>
+          <h1 class="app-title">メルカリ手残り計算機</h1>
+          <p class="app-subtitle">不用品出品の利益・価格逆算ツール</p>
+        </div>
+      </div>
+      <button type="button" class="header-reset-btn" id="btn-reset" title="入力をリセット">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        リセット
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 入力セクション（双方向自動計算） -->
+    <section class="card" aria-label="価格と手残りの双方向入力">
+      <div class="card-title">
+        <span>価格・手残りの連動計算</span>
+        <span class="badge">双方向自動計算</span>
+      </div>
+
+      <div class="bidirectional-container">
+        <!-- 販売価格入力 -->
+        <div class="input-box active-source" id="box-price">
+          <div class="input-label-row">
+            <label for="input-price" class="input-label">
+              <span>販売価格（出品金額）</span>
+              <span class="active-tag" id="tag-price">入力中</span>
+            </label>
+            <span class="input-subhint">※300円以上</span>
+          </div>
+          <div class="input-wrapper">
+            <span class="currency-symbol">¥</span>
+            <input type="number" id="input-price" class="price-input" placeholder="0" min="0" max="9999999" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+          </div>
+          <!-- 価格ショートカット -->
+          <div class="price-shortcuts">
+            <button type="button" class="shortcut-chip" data-val="300">¥300</button>
+            <button type="button" class="shortcut-chip" data-val="500">¥500</button>
+            <button type="button" class="shortcut-chip" data-val="1000">¥1,000</button>
+            <button type="button" class="shortcut-chip" data-val="2000">¥2,000</button>
+            <button type="button" class="shortcut-chip" data-val="3000">¥3,000</button>
+            <button type="button" class="shortcut-chip" data-val="5000">¥5,000</button>
+          </div>
+        </div>
+
+        <!-- 連動インジケーター -->
+        <div class="sync-indicator">
+          <svg class="sync-icon" viewBox="0 0 24 24">
+            <path d="M7 10l5-5 5 5H7zm10 4l-5 5-5-5h10z"/>
+          </svg>
+          <span>どちらを入力してもリアルタイムに相互計算</span>
+        </div>
+
+        <!-- 目標手残り入力（逆算用） -->
+        <div class="input-box" id="box-profit">
+          <div class="input-label-row">
+            <label for="input-target-profit" class="input-label">
+              <span>目標の手残り（手取り金額）</span>
+              <span class="active-tag" id="tag-profit">入力中</span>
+            </label>
+            <span class="input-subhint">欲しい利益から逆算</span>
+          </div>
+          <div class="input-wrapper">
+            <span class="currency-symbol">¥</span>
+            <input type="number" id="input-target-profit" class="price-input" placeholder="0" min="0" max="9999999" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 配送サイズ選択セクション -->
+    <section class="card" aria-label="配送方法と資材の選択">
+      <div class="card-title">
+        <span>発送サイズ・方法の選択</span>
+        <span style="font-size: 11px; color: var(--text-sub);">専用資材費も自動加算</span>
+      </div>
+
+      <!-- カテゴリタブ -->
+      <div class="category-tabs" role="tablist">
+        <button type="button" class="cat-tab active" data-cat="all">すべて</button>
+        <button type="button" class="cat-tab" data-cat="small">小型（本・薄手服）</button>
+        <button type="button" class="cat-tab" data-cat="medium">中型（厚手服・雑貨）</button>
+        <button type="button" class="cat-tab" data-cat="large">大型（靴・家電）</button>
+        <button type="button" class="cat-tab" data-cat="other">その他・普通郵便</button>
+      </div>
+
+      <!-- 配送選択肢一覧 -->
+      <div class="shipping-grid" id="shipping-options-container" role="radiogroup">
+        <!-- JSで動的生成 -->
+      </div>
+
+      <!-- コスト微調整アコーディオン（送料手動調整・資材費調整） -->
+      <div class="cost-adjust-box">
+        <div class="adjust-item">
+          <label for="input-custom-shipping">送料（手動変更可）</label>
+          <div class="adjust-input-wrapper">
+            <span style="color:var(--text-sub); margin-right:4px;">¥</span>
+            <input type="number" id="input-custom-shipping" value="210" min="0" max="99999" inputmode="numeric">
+          </div>
+        </div>
+        <div class="adjust-item">
+          <label for="input-packaging">梱包資材費（箱・シール等）</label>
+          <div class="adjust-input-wrapper">
+            <span style="color:var(--text-sub); margin-right:4px;">¥</span>
+            <input type="number" id="input-packaging" value="0" min="0" max="99999" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 計算結果・手残り表示カード -->
+    <section class="result-card is-profit" id="result-card" aria-label="計算結果">
+      <div class="result-header">
+        <span class="result-title">手残り金額（純利益）</span>
+        <span class="profit-rate-tag" id="profit-rate-badge">利益率: 0.0%</span>
+      </div>
+
+      <div class="profit-display">
+        <span class="profit-currency">¥</span>
+        <span class="profit-amount" id="profit-amount">0</span>
+      </div>
+
+      <!-- 警告・アラートバナー -->
+      <div class="alert-banner warning" id="alert-under-300">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <span>メルカリの最低出品価格は <strong>300円</strong> です。出品時には300円以上を設定してください。</span>
+      </div>
+
+      <div class="alert-banner danger" id="alert-loss">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        <span>手残りが <strong>マイナス（赤字）</strong> です！販売価格を上げるか、より安い発送方法をご検討ください。</span>
+      </div>
+
+      <!-- 内訳視覚化バー -->
+      <div class="breakdown-bar" title="費用の内訳">
+        <div class="bar-segment bar-profit" id="bar-profit" style="width: 0%;"></div>
+        <div class="bar-segment bar-fee" id="bar-fee" style="width: 0%;"></div>
+        <div class="bar-segment bar-shipping" id="bar-shipping" style="width: 0%;"></div>
+        <div class="bar-segment bar-material" id="bar-material" style="width: 0%;"></div>
+      </div>
+
+      <!-- 内訳詳細テーブル -->
+      <div class="breakdown-list">
+        <div class="breakdown-row">
+          <span class="breakdown-label">
+            <span class="color-dot dot-profit"></span>
+            手残り（手元に残る現金）
+          </span>
+          <span class="breakdown-val" id="row-profit">¥0</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-label">
+            <span class="color-dot dot-fee"></span>
+            メルカリ販売手数料（10%）
+          </span>
+          <span class="breakdown-val" id="row-fee">-¥0</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-label">
+            <span class="color-dot dot-shipping"></span>
+            配送料（<span id="label-shipping-method">ネコポス</span>）
+          </span>
+          <span class="breakdown-val" id="row-shipping">-¥210</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="breakdown-label">
+            <span class="color-dot dot-material"></span>
+            梱包資材費
+          </span>
+          <span class="breakdown-val" id="row-packaging">-¥0</span>
+        </div>
+      </div>
+
+      <!-- アクションボタン（コピー・履歴保存） -->
+      <div class="action-button-group">
+        <button type="button" class="btn-action btn-copy" id="btn-copy">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          結果をコピー
+        </button>
+        <button type="button" class="btn-action btn-save" id="btn-open-save-modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          履歴にメモ保存
+        </button>
+      </div>
+    </section>
+
+    <!-- 計算メモ・履歴一覧 -->
+    <section class="history-card" aria-label="計算履歴">
+      <div class="history-header">
+        <div class="card-title" style="margin-bottom: 0;">
+          <span>出品メモ・計算履歴</span>
+          <span style="font-size: 11px; color: var(--text-light);" id="history-count">(0件)</span>
+        </div>
+        <button type="button" class="btn-clear-all" id="btn-clear-history">全削除</button>
+      </div>
+      <div class="history-list" id="history-list-container">
+        <div class="history-empty">保存された履歴はありません。<br>「履歴にメモ保存」から出品予定の品を記録できます。</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- メモ保存モーダル -->
+  <div class="modal-overlay" id="save-modal">
+    <div class="modal-dialog">
+      <h3 class="modal-title">出品メモをつけて保存</h3>
+      <input type="text" class="modal-input" id="input-save-memo" placeholder="品名やメモ（例: 冬用コート、文庫本2冊）" maxlength="40">
+      <div class="modal-buttons">
+        <button type="button" class="modal-btn modal-btn-cancel" id="btn-modal-cancel">キャンセル</button>
+        <button type="button" class="modal-btn modal-btn-ok" id="btn-modal-submit">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div class="toast" id="toast-message">クリップボードにコピーしました</div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // 配送サイズ・方法プリセットデータ
+      const SHIPPING_PRESETS = [
+        // 小型
+        {
+          id: 'nekopos',
+          category: 'small',
+          carrier: 'raku',
+          carrierName: 'らくらく',
+          name: 'ネコポス',
+          desc: 'A4・厚さ3cm・1kg以内（本・薄手衣類）',
+          price: 210,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'yu_post_mini',
+          category: 'small',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: 'ゆうパケットポストmini',
+          desc: '21.6×17.8cm・2kg以内（小物・アクセサリー等）',
+          price: 160,
+          packagingCost: 20,
+          note: '※専用封筒代 ¥20 込み'
+        },
+        {
+          id: 'yu_post',
+          category: 'small',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: 'ゆうパケットポスト',
+          desc: '郵便ポスト投函可（厚さ目安3.5cm・2kg以内）',
+          price: 215,
+          packagingCost: 5,
+          note: '※発送シール代 約¥5 込み'
+        },
+        {
+          id: 'yu_packet',
+          category: 'small',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: 'ゆうパケット',
+          desc: 'A4・厚さ3cm・1kg以内（郵便局・コンビニ窓口）',
+          price: 230,
+          packagingCost: 0,
+          note: ''
+        },
+        // 中型
+        {
+          id: 'takkyubin_compact',
+          category: 'medium',
+          carrier: 'raku',
+          carrierName: 'らくらく',
+          name: '宅急便コンパクト',
+          desc: '厚さ5cm以内（小型箱）または薄型BOX（厚手の服・雑貨）',
+          price: 450,
+          packagingCost: 70,
+          note: '※専用BOX代 ¥70 込み'
+        },
+        {
+          id: 'yu_packet_plus',
+          category: 'medium',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: 'ゆうパケットプラス',
+          desc: '厚さ7cm・2kg以内（厚手のおもちゃ・雑貨・靴等）',
+          price: 455,
+          packagingCost: 65,
+          note: '※専用BOX代 ¥65 込み'
+        },
+        // 大型
+        {
+          id: 'size_60',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '60サイズ',
+          desc: '3辺合計60cm以内・2kg以内（小さめの家電・服まとめ）',
+          price: 750,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_80',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '80サイズ',
+          desc: '3辺合計80cm以内・5kg以内（靴箱・小型家電）',
+          price: 850,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_100',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '100サイズ',
+          desc: '3辺合計100cm以内・10kg以内（中型家電・コート等）',
+          price: 1050,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_120',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '120サイズ',
+          desc: '3辺合計120cm以内・15kg以内',
+          price: 1200,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_140',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '140サイズ',
+          desc: '3辺合計140cm以内・20kg以内',
+          price: 1450,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_160',
+          category: 'large',
+          carrier: 'raku',
+          carrierName: 'らく/ゆう',
+          name: '160サイズ',
+          desc: '3辺合計160cm以内・25kg以内（大型家具・大物家電）',
+          price: 1700,
+          packagingCost: 0,
+          note: ''
+        },
+        {
+          id: 'size_170',
+          category: 'large',
+          carrier: 'yu',
+          carrierName: 'ゆうゆう',
+          name: '170サイズ',
+          desc: '3辺合計170cm以内・25kg以内（ゆうパック限定）',
+          price: 1900,
+          packagingCost: 0,
+          note: ''
+        },
+        // その他・普通郵便
+        {
+          id: 'post_standard',
+          category: 'other',
+          carrier: 'post',
+          carrierName: '普通郵便',
+          name: '定形郵便（50g以内）',
+          desc: 'トレカ・薄い紙類など（※2024年10月新料金）',
+          price: 110,
+          packagingCost: 0,
+          note: '※追跡・補償なし'
+        },
+        {
+          id: 'post_nonstandard_100',
+          category: 'other',
+          carrier: 'post',
+          carrierName: '普通郵便',
+          name: '定形外規格内（100g以内）',
+          desc: '厚さ3cm以内・100g（軽量小物・アクセ）',
+          price: 180,
+          packagingCost: 0,
+          note: '※追跡・補償なし'
+        },
+        {
+          id: 'custom_shipping',
+          category: 'other',
+          carrier: 'post',
+          carrierName: '自由設定',
+          name: 'その他の送料（手動入力）',
+          desc: '下の入力欄でお好きな送料・資材費を指定できます',
+          price: 0,
+          packagingCost: 0,
+          note: ''
+        }
+      ];
+
+      // アプリケーション状態
+      let state = {
+        activeInput: 'price',
+        price: 0,
+        targetProfit: 0,
+        selectedShippingId: 'nekopos',
+        shippingCost: 210,
+        packagingCost: 0,
+        shippingMethodName: 'ネコポス',
+        currentCategory: 'all'
+      };
+
+      // DOM要素
+      const elPrice = document.getElementById('input-price');
+      const elTargetProfit = document.getElementById('input-target-profit');
+      const elBoxPrice = document.getElementById('box-price');
+      const elBoxProfit = document.getElementById('box-profit');
+      const elCustomShipping = document.getElementById('input-custom-shipping');
+      const elPackaging = document.getElementById('input-packaging');
+      const elShippingContainer = document.getElementById('shipping-options-container');
+      const elCategoryTabs = document.querySelectorAll('.cat-tab');
+
+      // 結果表示
+      const elResultCard = document.getElementById('result-card');
+      const elProfitAmount = document.getElementById('profit-amount');
+      const elProfitRateBadge = document.getElementById('profit-rate-badge');
+      const elRowProfit = document.getElementById('row-profit');
+      const elRowFee = document.getElementById('row-fee');
+      const elRowShipping = document.getElementById('row-shipping');
+      const elRowPackaging = document.getElementById('row-packaging');
+      const elLabelShippingMethod = document.getElementById('label-shipping-method');
+      const elBarProfit = document.getElementById('bar-profit');
+      const elBarFee = document.getElementById('bar-fee');
+      const elBarShipping = document.getElementById('bar-shipping');
+      const elBarMaterial = document.getElementById('bar-material');
+
+      // アラート
+      const elAlertUnder300 = document.getElementById('alert-under-300');
+      const elAlertLoss = document.getElementById('alert-loss');
+
+      // アクション
+      const elBtnReset = document.getElementById('btn-reset');
+      const elBtnCopy = document.getElementById('btn-copy');
+      const elBtnOpenSaveModal = document.getElementById('btn-open-save-modal');
+      const elSaveModal = document.getElementById('save-modal');
+      const elInputSaveMemo = document.getElementById('input-save-memo');
+      const elBtnModalCancel = document.getElementById('btn-modal-cancel');
+      const elBtnModalSubmit = document.getElementById('btn-modal-submit');
+      const elToast = document.getElementById('toast-message');
+
+      // 履歴
+      const elHistoryContainer = document.getElementById('history-list-container');
+      const elHistoryCount = document.getElementById('history-count');
+      const elBtnClearHistory = document.getElementById('btn-clear-history');
+
+      function formatYen(num) {
+        return (num || 0).toLocaleString('ja-JP');
+      }
+
+      function calcMercariFee(price) {
+        if (price <= 0) return 0;
+        return Math.floor(price * 0.1);
+      }
+
+      function renderShippingOptions() {
+        elShippingContainer.innerHTML = '';
+        const filtered = state.currentCategory === 'all'
+          ? SHIPPING_PRESETS
+          : SHIPPING_PRESETS.filter(item => item.category === state.currentCategory);
+
+        filtered.forEach(preset => {
+          const isSelected = preset.id === state.selectedShippingId;
+          const optDiv = document.createElement('div');
+          optDiv.className = `shipping-option ${isSelected ? 'selected' : ''}`;
+          optDiv.setAttribute('role', 'radio');
+          optDiv.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+          optDiv.dataset.id = preset.id;
+
+          const carrierClass = preset.carrier === 'raku' ? 'carrier-raku' : (preset.carrier === 'yu' ? 'carrier-yu' : 'carrier-post');
+
+          optDiv.innerHTML = `
+            <div class="shipping-left">
+              <div class="shipping-name-row">
+                <span class="carrier-badge ${carrierClass}">${preset.carrierName}</span>
+                <span class="shipping-name">${preset.name}</span>
+              </div>
+              <div class="shipping-desc">${preset.desc}</div>
+            </div>
+            <div class="shipping-right">
+              <div class="shipping-price">${preset.id === 'custom_shipping' ? '手入力' : '¥' + formatYen(preset.price)}</div>
+              ${preset.note ? `<span class="material-note">${preset.note}</span>` : ''}
+            </div>
+          `;
+
+          optDiv.addEventListener('click', function () {
+            selectShippingMethod(preset.id);
+          });
+
+          elShippingContainer.appendChild(optDiv);
+        });
+      }
+
+      function selectShippingMethod(presetId) {
+        const preset = SHIPPING_PRESETS.find(p => p.id === presetId);
+        if (!preset) return;
+
+        state.selectedShippingId = presetId;
+        state.shippingMethodName = preset.name;
+
+        if (presetId !== 'custom_shipping') {
+          state.shippingCost = preset.price;
+          state.packagingCost = preset.packagingCost;
+          elCustomShipping.value = preset.price;
+          elPackaging.value = preset.packagingCost;
+        }
+
+        renderShippingOptions();
+        recalculate();
+      }
+
+      function calculateFromPrice() {
+        const price = Math.max(0, parseInt(elPrice.value, 10) || 0);
+        state.price = price;
+        const fee = calcMercariFee(price);
+        const profit = price - fee - state.shippingCost - state.packagingCost;
+
+        state.targetProfit = profit;
+        if (state.activeInput === 'price') {
+          elTargetProfit.value = profit > 0 ? profit : (price > 0 ? profit : '');
+        }
+
+        updateUI(price, fee, profit);
+      }
+
+      function calculateFromProfit() {
+        const targetProfit = parseInt(elTargetProfit.value, 10) || 0;
+        state.targetProfit = targetProfit;
+
+        if (targetProfit <= 0) {
+          state.price = 0;
+          if (state.activeInput === 'profit') {
+            elPrice.value = '';
+          }
+          updateUI(0, 0, 0);
+          return;
+        }
+
+        const netNeeded = targetProfit + state.shippingCost + state.packagingCost;
+        let p = Math.max(300, Math.ceil(netNeeded / 0.9));
+
+        while (p - Math.floor(p * 0.1) - state.shippingCost - state.packagingCost < targetProfit) {
+          p++;
+        }
+
+        state.price = p;
+        if (state.activeInput === 'profit') {
+          elPrice.value = p;
+        }
+
+        const fee = calcMercariFee(p);
+        const profit = p - fee - state.shippingCost - state.packagingCost;
+        updateUI(p, fee, profit);
+      }
+
+      function recalculate() {
+        if (state.activeInput === 'profit') {
+          calculateFromProfit();
+        } else {
+          calculateFromPrice();
+        }
+      }
+
+      function updateUI(price, fee, profit) {
+        elProfitAmount.textContent = formatYen(profit);
+        elRowProfit.textContent = (profit < 0 ? '-' : '') + '¥' + formatYen(Math.abs(profit));
+        elRowFee.textContent = '-¥' + formatYen(fee);
+        elRowShipping.textContent = '-¥' + formatYen(state.shippingCost);
+        elRowPackaging.textContent = '-¥' + formatYen(state.packagingCost);
+        elLabelShippingMethod.textContent = state.shippingMethodName;
+
+        let profitRate = 0;
+        if (price > 0) {
+          profitRate = ((profit / price) * 100).toFixed(1);
+        }
+        elProfitRateBadge.textContent = `利益率: ${profitRate}%`;
+
+        elResultCard.classList.remove('is-profit', 'is-loss', 'is-warning');
+        elAlertUnder300.classList.remove('show');
+        elAlertLoss.classList.remove('show');
+
+        if (price > 0 && price < 300) {
+          elAlertUnder300.classList.add('show');
+          elResultCard.classList.add('is-warning');
+        } else if (profit < 0) {
+          elAlertLoss.classList.add('show');
+          elResultCard.classList.add('is-loss');
+        } else {
+          elResultCard.classList.add('is-profit');
+        }
+
+        if (price > 0) {
+          const validProfit = Math.max(0, profit);
+          const pProfit = (validProfit / price) * 100;
+          const pFee = (fee / price) * 100;
+          const pShipping = (Math.min(price, state.shippingCost) / price) * 100;
+          const pMat = (Math.min(price, state.packagingCost) / price) * 100;
+
+          elBarProfit.style.width = `${pProfit}%`;
+          elBarFee.style.width = `${pFee}%`;
+          elBarShipping.style.width = `${pShipping}%`;
+          elBarMaterial.style.width = `${pMat}%`;
+        } else {
+          elBarProfit.style.width = '0%';
+          elBarFee.style.width = '0%';
+          elBarShipping.style.width = '0%';
+          elBarMaterial.style.width = '0%';
+        }
+      }
+
+      function setActiveInput(mode) {
+        state.activeInput = mode;
+        if (mode === 'price') {
+          elBoxPrice.classList.add('active-source');
+          elBoxProfit.classList.remove('active-source');
+        } else {
+          elBoxProfit.classList.add('active-source');
+          elBoxPrice.classList.remove('active-source');
+        }
+      }
+
+      elPrice.addEventListener('input', function () {
+        setActiveInput('price');
+        calculateFromPrice();
+      });
+
+      elPrice.addEventListener('focus', function () {
+        setActiveInput('price');
+      });
+
+      elTargetProfit.addEventListener('input', function () {
+        setActiveInput('profit');
+        calculateFromProfit();
+      });
+
+      elTargetProfit.addEventListener('focus', function () {
+        setActiveInput('profit');
+      });
+
+      document.querySelectorAll('.shortcut-chip').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const val = parseInt(this.dataset.val, 10);
+          elPrice.value = val;
+          setActiveInput('price');
+          calculateFromPrice();
+        });
+      });
+
+      elCustomShipping.addEventListener('input', function () {
+        state.shippingCost = Math.max(0, parseInt(this.value, 10) || 0);
+        if (state.selectedShippingId !== 'custom_shipping') {
+          state.selectedShippingId = 'custom_shipping';
+          state.shippingMethodName = '手動設定 (' + state.shippingCost + '円)';
+          renderShippingOptions();
+        }
+        recalculate();
+      });
+
+      elPackaging.addEventListener('input', function () {
+        state.packagingCost = Math.max(0, parseInt(this.value, 10) || 0);
+        recalculate();
+      });
+
+      elCategoryTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+          elCategoryTabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          state.currentCategory = this.dataset.cat;
+          renderShippingOptions();
+        });
+      });
+
+      elBtnReset.addEventListener('click', function () {
+        elPrice.value = '';
+        elTargetProfit.value = '';
+        state.price = 0;
+        state.targetProfit = 0;
+        selectShippingMethod('nekopos');
+        setActiveInput('price');
+        showToast('入力をリセットしました');
+      });
+
+      let toastTimer = null;
+      function showToast(msg) {
+        if (toastTimer) clearTimeout(toastTimer);
+        elToast.textContent = msg;
+        elToast.classList.add('show');
+        toastTimer = setTimeout(() => {
+          elToast.classList.remove('show');
+        }, 2200);
+      }
+
+      elBtnCopy.addEventListener('click', function () {
+        const fee = calcMercariFee(state.price);
+        const profit = state.price - fee - state.shippingCost - state.packagingCost;
+        const profitRate = state.price > 0 ? ((profit / state.price) * 100).toFixed(1) : 0;
+
+        const copyText = [
+          '【メルカリ手残り計算結果】',
+          `販売価格: ¥${formatYen(state.price)}`,
+          '--------------------------',
+          `販売手数料 (10%): -¥${formatYen(fee)}`,
+          `配送料 (${state.shippingMethodName}): -¥${formatYen(state.shippingCost)}`,
+          `梱包資材費: -¥${formatYen(state.packagingCost)}`,
+          '--------------------------',
+          `手残り金額（純利益）: ¥${formatYen(profit)} (利益率 ${profitRate}%)`
+        ].join('\n');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(copyText).then(() => {
+            showToast('計算結果をコピーしました！');
+          }).catch(() => {
+            fallbackCopy(copyText);
+          });
+        } else {
+          fallbackCopy(copyText);
+        }
+      });
+
+      function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          showToast('計算結果をコピーしました！');
+        } catch (err) {
+          showToast('コピーできませんでした');
+        }
+        document.body.removeChild(textarea);
+      }
+
+      const STORAGE_KEY = 'mercari_calc_history_v1';
+
+      function loadHistory() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveHistory(list) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function renderHistory() {
+        const list = loadHistory();
+        elHistoryCount.textContent = `(${list.length}件)`;
+
+        if (list.length === 0) {
+          elHistoryContainer.innerHTML = '<div class="history-empty">保存された履歴はありません。<br>「履歴にメモ保存」から出品予定の品を記録できます。</div>';
+          return;
+        }
+
+        elHistoryContainer.innerHTML = '';
+        list.forEach((item, index) => {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+
+          const profitClass = item.profit < 0 ? 'color: var(--loss-red);' : '';
+
+          div.innerHTML = `
+            <div class="history-meta" data-index="${index}">
+              <div class="history-title-row">
+                <span class="history-memo">${escapeHtml(item.memo || '無題の出品')}</span>
+                <span class="history-date">${item.date || ''}</span>
+              </div>
+              <div class="history-details">
+                <span>出品: ¥${formatYen(item.price)}</span>
+                <span>手残り: <strong class="history-profit" style="${profitClass}">¥${formatYen(item.profit)}</strong></span>
+                <span>${escapeHtml(item.shippingName)}</span>
+              </div>
+            </div>
+            <div class="history-actions">
+              <button type="button" class="btn-history-load" data-index="${index}">呼出</button>
+              <button type="button" class="btn-history-delete" data-index="${index}" title="削除">✕</button>
+            </div>
+          `;
+
+          div.querySelector('.btn-history-load').addEventListener('click', function () {
+            restoreHistoryItem(item);
+          });
+          div.querySelector('.history-meta').addEventListener('click', function () {
+            restoreHistoryItem(item);
+          });
+
+          div.querySelector('.btn-history-delete').addEventListener('click', function (e) {
+            e.stopPropagation();
+            deleteHistoryItem(index);
+          });
+
+          elHistoryContainer.appendChild(div);
+        });
+      }
+
+      function escapeHtml(str) {
+        return (str || '').replace(/[&<>'"]/g, tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag));
+      }
+
+      function restoreHistoryItem(item) {
+        elPrice.value = item.price;
+        state.price = item.price;
+        state.shippingCost = item.shippingCost;
+        state.packagingCost = item.packagingCost;
+        state.shippingMethodName = item.shippingName;
+        state.selectedShippingId = item.shippingId || 'custom_shipping';
+
+        elCustomShipping.value = item.shippingCost;
+        elPackaging.value = item.packagingCost;
+
+        setActiveInput('price');
+        renderShippingOptions();
+        calculateFromPrice();
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast(`「${item.memo || '保存データ'}」を呼び出しました`);
+      }
+
+      function deleteHistoryItem(index) {
+        const list = loadHistory();
+        list.splice(index, 1);
+        saveHistory(list);
+        renderHistory();
+        showToast('履歴を削除しました');
+      }
+
+      elBtnClearHistory.addEventListener('click', function () {
+        const list = loadHistory();
+        if (list.length === 0) return;
+        if (confirm('保存されたすべての履歴を削除しますか？')) {
+          saveHistory([]);
+          renderHistory();
+          showToast('履歴をすべてクリアしました');
+        }
+      });
+
+      elBtnOpenSaveModal.addEventListener('click', function () {
+        if (state.price <= 0 && state.targetProfit <= 0) {
+          showToast('販売価格または目標手残りを入力してください');
+          return;
+        }
+        elInputSaveMemo.value = '';
+        elSaveModal.classList.add('show');
+        setTimeout(() => elInputSaveMemo.focus(), 100);
+      });
+
+      elBtnModalCancel.addEventListener('click', function () {
+        elSaveModal.classList.remove('show');
+      });
+
+      elSaveModal.addEventListener('click', function (e) {
+        if (e.target === elSaveModal) {
+          elSaveModal.classList.remove('show');
+        }
+      });
+
+      elBtnModalSubmit.addEventListener('click', function () {
+        executeSaveHistory();
+      });
+
+      elInputSaveMemo.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          executeSaveHistory();
+        }
+      });
+
+      function executeSaveHistory() {
+        const memo = elInputSaveMemo.value.trim() || '不用品メモ';
+        const fee = calcMercariFee(state.price);
+        const profit = state.price - fee - state.shippingCost - state.packagingCost;
+
+        const now = new Date();
+        const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        const item = {
+          memo: memo,
+          price: state.price,
+          profit: profit,
+          shippingId: state.selectedShippingId,
+          shippingName: state.shippingMethodName,
+          shippingCost: state.shippingCost,
+          packagingCost: state.packagingCost,
+          date: dateStr
+        };
+
+        const list = loadHistory();
+        list.unshift(item);
+        if (list.length > 50) list.pop();
+        saveHistory(list);
+
+        elSaveModal.classList.remove('show');
+        renderHistory();
+        showToast('履歴に保存しました！');
+      }
+
+      // 初期化実行
+      renderShippingOptions();
+      renderHistory();
+      calculateFromPrice();
+    })();
+  </script>
+</body>
+</html>
