@@ -68,12 +68,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
 
     .app-title-group {
       display: flex;
       align-items: center;
       gap: 10px;
+      min-width: 0;
     }
 
     .app-icon {
@@ -92,14 +94,14 @@
     }
 
     .app-title {
-      font-size: 17px;
+      font-size: clamp(15px, 4.3vw, 17px);
       font-weight: 700;
       letter-spacing: -0.3px;
       line-height: 1.2;
     }
 
     .app-subtitle {
-      font-size: 11px;
+      font-size: clamp(10px, 2.6vw, 11px);
       opacity: 0.9;
     }
 
@@ -440,26 +442,37 @@
     }
 
     .shipping-name {
-      font-size: 13.5px;
+      font-size: clamp(12px, 3.4vw, 13.5px);
       font-weight: 700;
       color: var(--text-main);
       line-height: 1.35;
-      overflow-wrap: anywhere;
+      font-feature-settings: "palt" 1;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+      display: inline-block;
     }
 
     .shipping-bottom-row {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 6px 10px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
     }
 
     .shipping-desc {
       font-size: 11px;
       color: var(--text-sub);
       line-height: 1.4;
-      flex: 1 1 160px;
+      font-feature-settings: "palt" 1;
+    }
+
+    .shipping-subdesc {
+      font-size: 11px;
+      color: var(--text-sub);
+      line-height: 1.4;
+      font-feature-settings: "palt" 1;
     }
 
     .shipping-price {
@@ -478,8 +491,9 @@
       font-size: 10.5px;
       color: #b45309;
       font-weight: 600;
-      white-space: nowrap;
-      flex-shrink: 0;
+      line-height: 1.35;
+      margin-top: 2px;
+      text-align: left;
     }
 
     /* 費用微調整アコーディオン */
@@ -669,7 +683,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
+      gap: 8px;
+      font-size: clamp(11.5px, 3.2vw, 13px);
     }
 
     .breakdown-label {
@@ -677,6 +692,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
+      font-feature-settings: "palt" 1;
     }
 
     .color-dot {
@@ -694,6 +711,8 @@
     .breakdown-val {
       font-weight: 700;
       color: var(--text-main);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* アクションボタン群 */
@@ -1225,7 +1244,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: 'ネコポス',
-          desc: 'A4・厚さ3cm・1kg以内（本・薄手衣類）',
+          desc: 'A4・厚さ3cm・1kg以内',
+          subDesc: '（本・薄手衣類）',
           price: 210,
           packagingCost: 0,
           note: ''
@@ -1236,7 +1256,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパケットポストmini',
-          desc: '21.6×17.8cm・2kg以内（小物・アクセサリー等）',
+          desc: '21.6×17.8cm・2kg以内',
+          subDesc: '（小物・アクセサリー等）',
           price: 160,
           packagingCost: 30,
           note: '※専用封筒代 ¥30 込み'
@@ -1248,6 +1269,7 @@
           carrierName: 'ゆうゆう',
           name: 'ゆうパケットポスト（シール）',
           desc: 'ポスト投函可（厚さ目安3.5cm・2kg以内）',
+          subDesc: '',
           price: 215,
           packagingCost: 7.5,
           note: '※シール代 ¥7.5 込み'
@@ -1258,7 +1280,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパケットポスト（専用箱）',
-          desc: '32.7×22.8×厚さ3cm・2kg以内（ポスト投函）',
+          desc: '32.7×22.8×厚さ3cm・2kg以内',
+          subDesc: '（ポスト投函）',
           price: 215,
           packagingCost: 65,
           note: '※専用箱代 ¥65 込み'
@@ -1269,7 +1292,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパケット',
-          desc: 'A4・厚さ3cm・1kg以内（郵便局・コンビニ窓口）',
+          desc: 'A4・厚さ3cm・1kg以内',
+          subDesc: '（郵便局・コンビニ窓口）',
           price: 230,
           packagingCost: 0,
           note: ''
@@ -1281,7 +1305,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: '宅急便コンパクト',
-          desc: '厚さ5cm以内（小型箱）または薄型BOX（厚手の服・雑貨）',
+          desc: '厚さ5cm以内（小型箱）または薄型BOX',
+          subDesc: '（厚手の服・雑貨）',
           price: 450,
           packagingCost: 70,
           note: '※専用BOX代 ¥70 込み'
@@ -1292,7 +1317,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパケットプラス',
-          desc: '厚さ7cm・2kg以内（厚手のおもちゃ・雑貨・靴等）',
+          desc: '厚さ7cm・2kg以内',
+          subDesc: '（厚手のおもちゃ・雑貨・靴等）',
           price: 455,
           packagingCost: 65,
           note: '※専用BOX代 ¥65 込み'
@@ -1304,7 +1330,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 60サイズ',
-          desc: '3辺合計60cm以内・25kg以内（小さめの家電・服まとめ）',
+          desc: '3辺合計60cm以内・25kg以内',
+          subDesc: '（小さめの家電・服まとめ）',
           price: 750,
           packagingCost: 0,
           note: ''
@@ -1315,7 +1342,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 80サイズ',
-          desc: '3辺合計80cm以内・25kg以内（靴箱・小型家電）',
+          desc: '3辺合計80cm以内・25kg以内',
+          subDesc: '（靴箱・小型家電）',
           price: 870,
           packagingCost: 0,
           note: ''
@@ -1326,7 +1354,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 100サイズ',
-          desc: '3辺合計100cm以内・25kg以内（中型家電・コート等）',
+          desc: '3辺合計100cm以内・25kg以内',
+          subDesc: '（中型家電・コート等）',
           price: 1070,
           packagingCost: 0,
           note: ''
@@ -1338,6 +1367,7 @@
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 120サイズ',
           desc: '3辺合計120cm以内・25kg以内',
+          subDesc: '',
           price: 1200,
           packagingCost: 0,
           note: ''
@@ -1349,6 +1379,7 @@
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 140サイズ',
           desc: '3辺合計140cm以内・25kg以内',
+          subDesc: '',
           price: 1450,
           packagingCost: 0,
           note: ''
@@ -1359,7 +1390,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 160サイズ',
-          desc: '3辺合計160cm以内・25kg以内（大型家具・大物家電）',
+          desc: '3辺合計160cm以内・25kg以内',
+          subDesc: '（大型家具・大物家電）',
           price: 1700,
           packagingCost: 0,
           note: ''
@@ -1370,7 +1402,8 @@
           carrier: 'yu',
           carrierName: 'ゆうゆう',
           name: 'ゆうパック 170サイズ',
-          desc: '3辺合計170cm以内・25kg以内（ゆうパック限定）',
+          desc: '3辺合計170cm以内・25kg以内',
+          subDesc: '（ゆうパック限定）',
           price: 1900,
           packagingCost: 0,
           note: ''
@@ -1382,7 +1415,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: '宅急便 60サイズ',
-          desc: '3辺合計60cm以内・2kg以内（小さめの家電・服まとめ）',
+          desc: '3辺合計60cm以内・2kg以内',
+          subDesc: '（小さめの家電・服まとめ）',
           price: 750,
           packagingCost: 0,
           note: ''
@@ -1393,7 +1427,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: '宅急便 80サイズ',
-          desc: '3辺合計80cm以内・5kg以内（靴箱・小型家電）',
+          desc: '3辺合計80cm以内・5kg以内',
+          subDesc: '（靴箱・小型家電）',
           price: 850,
           packagingCost: 0,
           note: ''
@@ -1404,7 +1439,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: '宅急便 100サイズ',
-          desc: '3辺合計100cm以内・10kg以内（中型家電・コート等）',
+          desc: '3辺合計100cm以内・10kg以内',
+          subDesc: '（中型家電・コート等）',
           price: 1050,
           packagingCost: 0,
           note: ''
@@ -1416,6 +1452,7 @@
           carrierName: 'らくらく',
           name: '宅急便 120サイズ',
           desc: '3辺合計120cm以内・15kg以内',
+          subDesc: '',
           price: 1200,
           packagingCost: 0,
           note: ''
@@ -1427,6 +1464,7 @@
           carrierName: 'らくらく',
           name: '宅急便 140サイズ',
           desc: '3辺合計140cm以内・20kg以内',
+          subDesc: '',
           price: 1450,
           packagingCost: 0,
           note: ''
@@ -1437,7 +1475,8 @@
           carrier: 'raku',
           carrierName: 'らくらく',
           name: '宅急便 160サイズ',
-          desc: '3辺合計160cm以内・25kg以内（大型家具・大物家電）',
+          desc: '3辺合計160cm以内・25kg以内',
+          subDesc: '（大型家具・大物家電）',
           price: 1700,
           packagingCost: 0,
           note: ''
@@ -1449,10 +1488,11 @@
           carrier: 'post',
           carrierName: '普通郵便',
           name: '定形郵便（50g以内）',
-          desc: 'トレカ・薄い紙類など（※2024年10月新料金）',
+          desc: 'トレカ・薄い紙類など',
+          subDesc: '',
           price: 110,
           packagingCost: 0,
-          note: '※追跡・補償なし'
+          note: '※2024年10月新料金・追跡/補償なし'
         },
         {
           id: 'post_nonstandard_100',
@@ -1460,7 +1500,8 @@
           carrier: 'post',
           carrierName: '普通郵便',
           name: '定形外規格内（100g以内）',
-          desc: '厚さ3cm以内・100g（軽量小物・アクセ）',
+          desc: '厚さ3cm以内・100g以内',
+          subDesc: '（軽量小物・アクセサリー）',
           price: 180,
           packagingCost: 0,
           note: '※追跡・補償なし'
@@ -1471,7 +1512,8 @@
           carrier: 'post',
           carrierName: '自由設定',
           name: 'その他の送料（手動入力）',
-          desc: '下の入力欄でお好きな送料・資材費を指定できます',
+          desc: '下の入力欄で送料・資材費を自由に指定',
+          subDesc: '',
           price: 0,
           packagingCost: 0,
           note: ''
@@ -1569,17 +1611,20 @@
 
           const carrierClass = preset.carrier === 'raku' ? 'carrier-raku' : (preset.carrier === 'yu' ? 'carrier-yu' : 'carrier-post');
 
+          const formattedName = preset.name.replace(/(（[^）]+）)/g, '<span class="nowrap">$1</span>');
+
           optDiv.innerHTML = `
             <div class="shipping-top-row">
               <div class="shipping-name-row">
                 <span class="carrier-badge ${carrierClass}">${preset.carrierName}</span>
-                <span class="shipping-name">${preset.name}</span>
+                <span class="shipping-name">${formattedName}</span>
               </div>
               <div class="shipping-price">${preset.id === 'custom_shipping' ? '手入力' : '¥' + formatYen(preset.price)}</div>
             </div>
             <div class="shipping-bottom-row">
               <div class="shipping-desc">${preset.desc}</div>
-              ${preset.note ? `<span class="material-note">${preset.note}</span>` : ''}
+              ${preset.subDesc ? `<div class="shipping-subdesc">${preset.subDesc}</div>` : ''}
+              ${preset.note ? `<div class="material-note">${preset.note}</div>` : ''}
             </div>
           `;
 
