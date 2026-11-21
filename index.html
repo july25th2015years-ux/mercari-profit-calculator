@@ -359,9 +359,9 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-height: 280px;
+      max-height: 360px;
       overflow-y: auto;
-      padding-right: 2px;
+      padding: 2px 4px 2px 2px;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -375,17 +375,18 @@
     }
 
     .shipping-option {
+      flex-shrink: 0;
+      height: auto;
       border: 1.5px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 10px 12px;
+      padding: 11px 12px;
       background: #ffffff;
       cursor: pointer;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 5px;
       transition: all 0.15s ease-in-out;
-      min-height: 58px;
-      gap: 8px;
+      min-height: 60px;
     }
 
     .shipping-option:active {
@@ -399,24 +400,25 @@
       box-shadow: 0 0 0 1px var(--primary);
     }
 
-    .shipping-left {
+    .shipping-top-row {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-      flex: 1;
-      min-width: 0;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .shipping-name-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 6px;
+      min-width: 0;
+      flex: 1;
     }
 
     .carrier-badge {
       font-size: 10px;
       font-weight: 700;
-      padding: 1px 5px;
+      padding: 2px 6px;
       border-radius: 4px;
       white-space: nowrap;
       flex-shrink: 0;
@@ -442,23 +444,30 @@
       font-weight: 700;
       color: var(--text-main);
       line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .shipping-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 6px 10px;
+      flex-wrap: wrap;
     }
 
     .shipping-desc {
       font-size: 11px;
       color: var(--text-sub);
-      line-height: 1.35;
-    }
-
-    .shipping-right {
-      text-align: right;
-      flex-shrink: 0;
+      line-height: 1.4;
+      flex: 1 1 160px;
     }
 
     .shipping-price {
       font-size: 16px;
       font-weight: 800;
       color: var(--text-main);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .shipping-option.selected .shipping-price {
@@ -466,11 +475,11 @@
     }
 
     .material-note {
-      font-size: 10px;
+      font-size: 10.5px;
       color: #b45309;
       font-weight: 600;
-      display: block;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* 費用微調整アコーディオン */
@@ -1561,15 +1570,15 @@
           const carrierClass = preset.carrier === 'raku' ? 'carrier-raku' : (preset.carrier === 'yu' ? 'carrier-yu' : 'carrier-post');
 
           optDiv.innerHTML = `
-            <div class="shipping-left">
+            <div class="shipping-top-row">
               <div class="shipping-name-row">
                 <span class="carrier-badge ${carrierClass}">${preset.carrierName}</span>
                 <span class="shipping-name">${preset.name}</span>
               </div>
-              <div class="shipping-desc">${preset.desc}</div>
-            </div>
-            <div class="shipping-right">
               <div class="shipping-price">${preset.id === 'custom_shipping' ? '手入力' : '¥' + formatYen(preset.price)}</div>
+            </div>
+            <div class="shipping-bottom-row">
+              <div class="shipping-desc">${preset.desc}</div>
               ${preset.note ? `<span class="material-note">${preset.note}</span>` : ''}
             </div>
           `;
