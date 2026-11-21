@@ -308,38 +308,51 @@
 
     /* 配送サイズ選択セクション */
     .category-tabs {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      -webkit-overflow-scrolling: touch;
       margin-bottom: 10px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    .category-tabs::-webkit-scrollbar {
-      display: none;
     }
 
     .cat-tab {
-      flex: 0 0 auto;
-      padding: 6px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 6px 4px;
       background: #edf0f4;
       border: 1px solid transparent;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+      border-radius: var(--radius-sm);
       color: var(--text-sub);
       cursor: pointer;
       transition: all 0.15s;
-      white-space: nowrap;
+      text-align: center;
+    }
+
+    .cat-tab:active {
+      transform: scale(0.98);
     }
 
     .cat-tab.active {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
+    }
+
+    .cat-tab-title {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .cat-tab-sub {
+      font-size: clamp(9px, 2.4vw, 10.5px);
+      opacity: 0.88;
+      margin-top: 2px;
+      line-height: 1.15;
+      white-space: nowrap;
     }
 
     .shipping-grid {
@@ -1035,11 +1048,18 @@
 
       <!-- カテゴリタブ -->
       <div class="category-tabs" role="tablist">
-        <button type="button" class="cat-tab active" data-cat="all">すべて</button>
-        <button type="button" class="cat-tab" data-cat="small">小型（本・薄手服）</button>
-        <button type="button" class="cat-tab" data-cat="medium">中型（厚手服・雑貨）</button>
-        <button type="button" class="cat-tab" data-cat="large">大型（靴・家電）</button>
-        <button type="button" class="cat-tab" data-cat="other">その他・普通郵便</button>
+        <button type="button" class="cat-tab active" data-cat="yu">
+          <span class="cat-tab-title">ゆうゆう</span>
+          <span class="cat-tab-sub">ローソン、郵便局</span>
+        </button>
+        <button type="button" class="cat-tab" data-cat="raku">
+          <span class="cat-tab-title">らくらく</span>
+          <span class="cat-tab-sub">7、ファミマ、ヤマト</span>
+        </button>
+        <button type="button" class="cat-tab" data-cat="other">
+          <span class="cat-tab-title">普通郵便ほか</span>
+          <span class="cat-tab-sub">郵便局・ポスト</span>
+        </button>
       </div>
 
       <!-- 配送選択肢一覧 -->
@@ -1053,14 +1073,14 @@
           <label for="input-custom-shipping">送料（手動変更可）</label>
           <div class="adjust-input-wrapper">
             <span style="color:var(--text-sub); margin-right:4px;">¥</span>
-            <input type="number" id="input-custom-shipping" value="210" min="0" max="99999" inputmode="numeric">
+            <input type="number" id="input-custom-shipping" value="160" min="0" max="99999" inputmode="numeric">
           </div>
         </div>
         <div class="adjust-item">
           <label for="input-packaging">梱包資材費（箱・シール等）</label>
           <div class="adjust-input-wrapper">
             <span style="color:var(--text-sub); margin-right:4px;">¥</span>
-            <input type="number" id="input-packaging" value="0" min="0" max="99999" step="any" inputmode="decimal">
+            <input type="number" id="input-packaging" value="30" min="0" max="99999" step="any" inputmode="decimal">
           </div>
         </div>
       </div>
@@ -1454,11 +1474,11 @@
         activeInput: 'price',
         price: 0,
         targetProfit: 0,
-        selectedShippingId: 'nekopos',
-        shippingCost: 210,
-        packagingCost: 0,
-        shippingMethodName: 'ネコポス',
-        currentCategory: 'all'
+        selectedShippingId: 'yu_post_mini',
+        shippingCost: 160,
+        packagingCost: 30,
+        shippingMethodName: 'ゆうパケットポストmini',
+        currentCategory: 'yu'
       };
 
       // DOM要素
@@ -1519,11 +1539,16 @@
         return Math.floor(price * 0.1);
       }
 
+      function isMatchCategory(preset, cat) {
+        if (cat === 'yu') return preset.carrier === 'yu';
+        if (cat === 'raku') return preset.carrier === 'raku';
+        if (cat === 'other') return preset.carrier === 'post';
+        return true;
+      }
+
       function renderShippingOptions() {
         elShippingContainer.innerHTML = '';
-        const filtered = state.currentCategory === 'all'
-          ? SHIPPING_PRESETS
-          : SHIPPING_PRESETS.filter(item => item.category === state.currentCategory);
+        const filtered = SHIPPING_PRESETS.filter(item => isMatchCategory(item, state.currentCategory));
 
         filtered.forEach(preset => {
           const isSelected = preset.id === state.selectedShippingId;
@@ -1742,7 +1767,9 @@
         elTargetProfit.value = '';
         state.price = 0;
         state.targetProfit = 0;
-        selectShippingMethod('nekopos');
+        state.currentCategory = 'yu';
+        elCategoryTabs.forEach(t => t.classList.toggle('active', t.dataset.cat === 'yu'));
+        selectShippingMethod('yu_post_mini');
         setActiveInput('price');
         showToast('入力をリセットしました');
       });
@@ -1887,6 +1914,13 @@
         state.packagingCost = item.packagingCost;
         state.shippingMethodName = item.shippingName;
         state.selectedShippingId = item.shippingId || 'custom_shipping';
+
+        const matchedPreset = SHIPPING_PRESETS.find(p => p.id === state.selectedShippingId);
+        if (matchedPreset) {
+          const targetCat = matchedPreset.carrier === 'yu' ? 'yu' : (matchedPreset.carrier === 'raku' ? 'raku' : 'other');
+          state.currentCategory = targetCat;
+          elCategoryTabs.forEach(t => t.classList.toggle('active', t.dataset.cat === targetCat));
+        }
 
         elCustomShipping.value = item.shippingCost;
         elPackaging.value = item.packagingCost;
