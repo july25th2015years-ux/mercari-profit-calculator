@@ -464,15 +464,18 @@
     .shipping-desc {
       font-size: 11px;
       color: var(--text-sub);
-      line-height: 1.4;
+      line-height: 1.45;
       font-feature-settings: "palt" 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      width: 100%;
     }
 
+    .shipping-desc-main,
     .shipping-subdesc {
-      font-size: 11px;
-      color: var(--text-sub);
-      line-height: 1.4;
-      font-feature-settings: "palt" 1;
+      display: inline-block;
+      max-width: 100%;
     }
 
     .shipping-price {
@@ -1622,8 +1625,9 @@
               <div class="shipping-price">${preset.id === 'custom_shipping' ? '手入力' : '¥' + formatYen(preset.price)}</div>
             </div>
             <div class="shipping-bottom-row">
-              <div class="shipping-desc">${preset.desc}</div>
-              ${preset.subDesc ? `<div class="shipping-subdesc">${preset.subDesc}</div>` : ''}
+              <div class="shipping-desc">
+                <span class="shipping-desc-main">${preset.desc}</span>${preset.subDesc ? `<span class="shipping-subdesc">${preset.subDesc}</span>` : ''}
+              </div>
               ${preset.note ? `<div class="material-note">${preset.note}</div>` : ''}
             </div>
           `;
